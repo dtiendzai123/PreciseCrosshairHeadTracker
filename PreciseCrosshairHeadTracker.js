@@ -285,7 +285,12 @@ const bone_Head = {
     e30: 0.0, e31: 0.0, e32: 0.0, e33: 1.0
   }
 };
+const GamePackages = {
+  GamePackage1: "com.dts.freefireth",
+  GamePackage2: "com.dts.freefiremax"
+};
 
+// ===
 // == Run Tracker ==
 const crosshairLock = new CrosshairHeadTracker();
 crosshairLock.loop(
