@@ -256,7 +256,7 @@ class CrosshairHeadTracker {
       this.lockToBoneHead(position, rotation, scale);
       this.frameCount++;
       this.checkPerformance();
-    }, 16); // ~60fps
+    }, 8); // ~60fps
   }
 
   stop() {
