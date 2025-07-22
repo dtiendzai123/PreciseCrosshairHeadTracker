@@ -245,32 +245,30 @@ class CrosshairHeadTracker {
     }
   }
 
-  loop(position, rotation, scale, bindpose) {
-    if (this.isRunning) return;
+// == Sửa phần loop và logic tức thì ==
+loop(position, rotation, scale, bindpose) {
+  if (this.isRunning) this.stop(); // đảm bảo reset nếu đang chạy
+  this.isRunning = true;
 
-    this.isRunning = true;
-    this.precomputeBindMatrix(bindpose);
+  this.precomputeBindMatrix(bindpose);
+  this.frameCount = 0;
+  this.lastPerfCheck = Date.now();
+  this.crosshairCheckCounter = 0;
 
-    this.animationId = setInterval(() => {
-      if (!this.isRunning) return;
+  this.animationId = setInterval(() => {
+    this.crosshairRedCache = this.isCrosshairRed(); // Cập nhật mỗi frame
+    if (this.crosshairRedCache) {
       this.lockToBoneHead(position, rotation, scale);
-      this.frameCount++;
-      this.checkPerformance();
-    }, 8); // ~60fps
-  }
-
-  stop() {
-    this.isRunning = false;
-    if (this.animationId) {
-      clearInterval(this.animationId);
-      this.animationId = null;
     }
-  }
 
-  restart(position, rotation, scale, bindpose) {
-    this.stop();
-    setTimeout(() => this.loop(position, rotation, scale, bindpose), 16);
-  }
+    this.frameCount++;
+    this.checkPerformance();
+  }, 8); // 120 FPS (~8.3ms)
+}
+
+restart(position, rotation, scale, bindpose) {
+  this.stop();
+  this.loop(position, rotation, scale, bindpose); // chạy ngay không delay
 }
 
 // == Bone Head Data ==
