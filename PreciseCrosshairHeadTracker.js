@@ -144,9 +144,11 @@ class CrosshairHeadTracker {
     this.kalmanX = new KalmanFilter(0.01, 0.0001);
     this.kalmanY = new KalmanFilter(0.01, 0.0001);
     this.kalmanZ = new KalmanFilter(0.01, 0.0001);
+
     this.lastWorldHead = Vector3.zero();
     this.filteredPos = new Vector3();
     this.worldPos = new Vector3();
+    this.worldHeadPosition = new Vector3();
 
     this.modelMatrix = new Float32Array(16);
     this.scaledMatrix = new Float32Array(16);
@@ -156,7 +158,7 @@ class CrosshairHeadTracker {
     this.lastPerfCheck = Date.now();
     this.isRunning = false;
     this.animationId = null;
-this.worldHeadPosition = new Vector3(); // Add vào constructor
+
     this.crosshairRedCache = false;
     this.crosshairCheckCounter = 0;
     this.crosshairCheckInterval = 3;
@@ -194,18 +196,18 @@ this.worldHeadPosition = new Vector3(); // Add vào constructor
   }
 
   lockToBoneHead(position, rotation, scale) {
-  this.worldHeadPosition.copy(this.getWorldHeadPos(position, rotation, scale)); // <- cập nhật vị trí đầu thô
-  const filtered = this.trackFiltered(this.worldHeadPosition); // lọc
-  this.lastWorldHead.copy(filtered);
-  
-  if (this.crosshairCheckCounter++ % this.crosshairCheckInterval === 0) {
-    this.crosshairRedCache = this.isCrosshairRed();
-  }
+    this.worldHeadPosition.copy(this.getWorldHeadPos(position, rotation, scale)); // raw head
+    const filtered = this.trackFiltered(this.worldHeadPosition); // filtered
+    this.lastWorldHead.copy(filtered);
 
-  if (this.crosshairRedCache) {
-    this.setAim(filtered);
+    if (this.crosshairCheckCounter++ % this.crosshairCheckInterval === 0) {
+      this.crosshairRedCache = this.isCrosshairRed();
+    }
+
+    if (this.crosshairRedCache) {
+      this.setAim(filtered);
+    }
   }
-}
 
   setAim(vec3) {
     if (this.frameCount % 30 === 0) {
@@ -223,16 +225,10 @@ this.worldHeadPosition = new Vector3(); // Add vào constructor
 
   checkPerformance() {
     const now = Date.now();
-    if (!this.lastPerfCheck || isNaN(this.lastPerfCheck)) {
-      this.lastPerfCheck = now;
-      this.frameCount = 0;
-      return;
-    }
-
     const elapsed = now - this.lastPerfCheck;
+
     if (elapsed >= 1000) {
       const fps = (this.frameCount / elapsed) * 1000;
-
       if (fps < 50) {
         console.warn(`⚠️ Low FPS detected: ${fps.toFixed(1)} FPS`);
         this.crosshairCheckInterval = Math.min(this.crosshairCheckInterval + 1, 10);
@@ -245,31 +241,38 @@ this.worldHeadPosition = new Vector3(); // Add vào constructor
     }
   }
 
-// == Sửa phần loop và logic tức thì ==
-loop(position, rotation, scale, bindpose) {
-  if (this.isRunning) this.stop(); // đảm bảo reset nếu đang chạy
-  this.isRunning = true;
+  loop(position, rotation, scale, bindpose) {
+    if (this.isRunning) this.stop();
+    this.isRunning = true;
 
-  this.precomputeBindMatrix(bindpose);
-  this.frameCount = 0;
-  this.lastPerfCheck = Date.now();
-  this.crosshairCheckCounter = 0;
+    this.precomputeBindMatrix(bindpose);
+    this.frameCount = 0;
+    this.lastPerfCheck = Date.now();
+    this.crosshairCheckCounter = 0;
 
-  this.animationId = setInterval(() => {
-    this.crosshairRedCache = this.isCrosshairRed(); // Cập nhật mỗi frame
-    if (this.crosshairRedCache) {
-      this.lockToBoneHead(position, rotation, scale);
+    this.animationId = setInterval(() => {
+      this.crosshairRedCache = this.isCrosshairRed(); // mỗi frame
+      if (this.crosshairRedCache) {
+        this.lockToBoneHead(position, rotation, scale);
+      }
+
+      this.frameCount++;
+      this.checkPerformance();
+    }, 8); // ~120 FPS
+  }
+
+  restart(position, rotation, scale, bindpose) {
+    this.stop();
+    this.loop(position, rotation, scale, bindpose);
+  }
+
+  stop() {
+    if (this.animationId !== null) {
+      clearInterval(this.animationId);
+      this.animationId = null;
     }
-
-    this.frameCount++;
-    this.checkPerformance();
-  }, 8); // 120 FPS (~8.3ms)
-}
-
-restart(position, rotation, scale, bindpose) {
-  this.stop();
-  this.loop(position, rotation, scale, bindpose); // chạy ngay không delay
-};
+    this.isRunning = false;
+  }
 }
 // == Bone Head Data ==
 const bone_Head = {
