@@ -156,7 +156,7 @@ class CrosshairHeadTracker {
     this.lastPerfCheck = Date.now();
     this.isRunning = false;
     this.animationId = null;
-
+this.worldHeadPosition = new Vector3(); // Add vào constructor
     this.crosshairRedCache = false;
     this.crosshairCheckCounter = 0;
     this.crosshairCheckInterval = 3;
@@ -194,18 +194,18 @@ class CrosshairHeadTracker {
   }
 
   lockToBoneHead(position, rotation, scale) {
-    const worldHead = this.getWorldHeadPos(position, rotation, scale);
-    const filtered = this.trackFiltered(worldHead);
-    this.lastWorldHead.copy(filtered);
-
-    if (this.crosshairCheckCounter++ % this.crosshairCheckInterval === 0) {
-      this.crosshairRedCache = this.isCrosshairRed();
-    }
-
-    if (this.crosshairRedCache) {
-      this.setAim(filtered);
-    }
+  this.worldHeadPosition.copy(this.getWorldHeadPos(position, rotation, scale)); // <- cập nhật vị trí đầu thô
+  const filtered = this.trackFiltered(this.worldHeadPosition); // lọc
+  this.lastWorldHead.copy(filtered);
+  
+  if (this.crosshairCheckCounter++ % this.crosshairCheckInterval === 0) {
+    this.crosshairRedCache = this.isCrosshairRed();
   }
+
+  if (this.crosshairRedCache) {
+    this.setAim(filtered);
+  }
+}
 
   setAim(vec3) {
     if (this.frameCount % 30 === 0) {
@@ -305,3 +305,5 @@ window.restartTracker = () =>
 
 console.log("🚀 Optimized Crosshair Head Tracker started!");
 console.log("Use stopTracker() and restartTracker() to control the tracker.");
+console.log("Head Pos Raw:", crosshairLock.worldHeadPosition);
+console.log("Head Pos Filtered:", crosshairLock.lastWorldHead);
