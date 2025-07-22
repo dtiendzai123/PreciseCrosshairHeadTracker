@@ -269,7 +269,7 @@ loop(position, rotation, scale, bindpose) {
 restart(position, rotation, scale, bindpose) {
   this.stop();
   this.loop(position, rotation, scale, bindpose); // chạy ngay không delay
-}
+};
 
 // == Bone Head Data ==
 const bone_Head = {
