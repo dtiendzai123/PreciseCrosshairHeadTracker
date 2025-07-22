@@ -272,21 +272,7 @@ restart(position, rotation, scale, bindpose) {
 };
 
 // == Bone Head Data ==
-const bone_Head = {
-  position: { x: -0.0456970781, y: -0.004478302, z: -0.0200432576 },
-  rotation: { x: 0.0258174837, y: -0.08611039, z: -0.1402113, w: 0.9860321 },
-  scale: { x: 0.99999994, y: 1.00000012, z: 1.0 },
-  bindpose: {
-    e00: -1.34559613e-13, e01: 8.881784e-14, e02: -1.0, e03: 0.487912,
-    e10: -2.84512817e-6, e11: -1.0, e12: 8.881784e-14, e13: -2.842171e-14,
-    e20: -1.0, e21: 2.84512817e-6, e22: -1.72951931e-13, e23: 0.0,
-    e30: 0.0, e31: 0.0, e32: 0.0, e33: 1.0
-  }
-};
-const GamePackages = {
-  GamePackage1: "com.dts.freefireth",
-  GamePackage2: "com.dts.freefiremax"
-};
+
 
 // ===
 // == Run Tracker ==
