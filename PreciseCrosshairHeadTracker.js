@@ -1,4 +1,14 @@
-// === SHADOWROCKET INSTANT HEAD TRACKER ===
+// ==UserScript==
+// @name         Shadowrocket Instant Head Tracker
+// @namespace    http://garena.freefire/
+// @match        *api.ff.garena.com*
+// @run-at       response
+// ==/UserScript==
+
+let body = $response.body;
+
+// Nếu là JSON thì parse thử
+try { body = JSON.parse($response.body); } catch (e) {}
 
 class Vector3 {
   constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;}
@@ -43,12 +53,6 @@ class AdaptiveKalmanFilter {
   }
 }
 
-const matrixPool = {
-  matrices:[new Float32Array(16), new Float32Array(16), new Float32Array(16)],
-  idx:0,
-  get(){const m=this.matrices[this.idx]; this.idx=(this.idx+1)%this.matrices.length; return m;}
-};
-
 function quaternionToMatrix(q,out){
   const {x,y,z,w}=q;
   const x2=x+x,y2=y+y,z2=z+z;
@@ -82,13 +86,11 @@ class ShadowrocketHeadTracker {
     this.isRunning=false;
     this.intervalId=null;
     this.frameInterval=8;
-    this.networkMonitor=null;
     this.crosshairRedCache=false;
     this.checkCounter=0;
     this.checkInterval=3;
     this.lastAimTime=0;
-    this.aimCooldown=0; // zero delay
-    this.humanize=false; // disable jitter
+    this.aimCooldown=0;
   }
 
   precomputeBindMatrix(bindpose){
@@ -100,13 +102,11 @@ class ShadowrocketHeadTracker {
   }
 
   getWorldHeadPos(position,rotation,scale){
-    const outMat=this.modelMatrix;
-    quaternionToMatrix(rotation,outMat);
-    const m=outMat, s=this.scaledMatrix;
-    const sx=scale.x,sy=scale.y,sz=scale.z;
-    s[0]=m[0]*sx; s[1]=m[1]*sy; s[2]=m[2]*sz; s[3]=position.x;
-    s[4]=m[4]*sx; s[5]=m[5]*sy; s[6]=m[6]*sz; s[7]=position.y;
-    s[8]=m[8]*sx; s[9]=m[9]*sy; s[10]=m[10]*sz; s[11]=position.z;
+    quaternionToMatrix(rotation,this.modelMatrix);
+    const m=this.modelMatrix, s=this.scaledMatrix;
+    s[0]=m[0]*scale.x; s[1]=m[1]*scale.y; s[2]=m[2]*scale.z; s[3]=position.x;
+    s[4]=m[4]*scale.x; s[5]=m[5]*scale.y; s[6]=m[6]*scale.z; s[7]=position.y;
+    s[8]=m[8]*scale.x; s[9]=m[9]*scale.y; s[10]=m[10]*scale.z; s[11]=position.z;
     s[12]=0;s[13]=0;s[14]=0;s[15]=1;
     this.worldPos.set(s[3], s[7], s[11]);
     return multiplyMatrixVec(this.bindMatrix, this.worldPos, this.worldPos);
@@ -162,7 +162,7 @@ class ShadowrocketHeadTracker {
   }
 }
 
-// === Usage Example ===
+// ==== Khởi động tracker ====
 const bone_Head = {
   position: {x:-0.0456970781,y:-0.004478302,z:-0.0200432576},
   rotation: {x:0.0258174837,y:-0.08611039,z:-0.1402113,w:0.9860321},
@@ -178,7 +178,11 @@ const bone_Head = {
 const tracker = new ShadowrocketHeadTracker();
 tracker.loop(bone_Head.position, bone_Head.rotation, bone_Head.scale, bone_Head.bindpose);
 
-window.stopTracker = ()=> tracker.stop();
-window.getTrackerStatus = ()=> tracker.getStatus();
+console.log("🚀 Instant Head Tracker loaded.");
 
-console.log("🚀 Tracker started: instant head snap, no jitter.");
+// Trả về body gốc
+if (typeof body === "object") {
+  $done({ body: JSON.stringify(body) });
+} else {
+  $done({ body });
+}
